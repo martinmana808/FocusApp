@@ -4,6 +4,4 @@
   functions = "netlify/functions"
 
 [build.environment]
-  NODE_VERSION                 = "18"
-  npm_config_build_from_source = "true"   
-  npm_config_prebuild_install  = "false"  
+  NODE_VERSION = "18"
