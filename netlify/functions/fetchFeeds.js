@@ -1,38 +1,48 @@
-
 import Parser from 'rss-parser';
 import fs from 'fs';
 import { join } from 'path';
-import db from './db.js';
+import supabase from './db.js';
 
-export const config = {
-  schedule: '0 3 * * *'   // todos los días 03:00 UTC
-};
+/**
+ * ⏰  Se ejecuta a las 03:00 UTC todos los días
+ *     (puedes mover el cron cambiando el string).
+ */
+export const config = { schedule: '0 3 * * *' };
 
-const parser = new Parser();
+const parser   = new Parser();
+// leemos channels.json desde la raíz del proyecto
 const channels = JSON.parse(
-  fs.readFileSync(join(process.cwd(), 'channels.json'), 'utf8')
+  fs.readFileSync(join(process.cwd(), 'channels.json'), 'utf8'),
 );
 
 export async function handler() {
-  const today = new Date().toISOString().slice(0, 10);
-  const insert = db.prepare(
-    `INSERT OR IGNORE INTO videos
-       (id,title,published_at,source,fetched_on)
-     VALUES (?,?,?,?,?)`
-  );
+  const today = new Date().toISOString().slice(0, 10);   // YYYY-MM-DD
 
-  for (const { id, name } of channels) {
-    const url  = `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`;
-    const feed = await parser.parseURL(url);
+  for (const { id: channelId, name } of channels) {
+    const url  = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
 
-    feed.items.forEach(item => {
-      const pub = item.isoDate.slice(0, 10);
-      if (pub === today) {
-        insert.run(item.id, item.title, item.isoDate, name, today);
+    try {
+      const feed = await parser.parseURL(url);
+
+      // insertamos/actualizamos cada video del día
+      for (const item of feed.items ?? []) {
+        if (item.isoDate?.startsWith(today)) {
+          await supabase.from('videos').upsert(
+            {
+              id:           item.id,     // videoId
+              title:        item.title,
+              published_at: item.isoDate,
+              source:       name,
+              fetched_on:   today,
+            },
+            { onConflict: 'id' },        // evita duplicados
+          );
+        }
       }
-    });
+    } catch (err) {
+      console.error('RSS error', channelId, err.message);
+    }
   }
 
   return { statusCode: 200, body: 'ok' };
 }
-
