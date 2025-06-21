@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Digest – Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 2rem auto; }
+    #profile { white-space: pre-wrap; background: #f3f3f3; padding: 1rem; border-radius: 6px; }
+    button { margin-right: .6rem; padding: .4rem .8rem; }
+  </style>
+</head>
+<body>
+  <h1>AI Digest</h1>
+
+  <button id="btn-login">Log in</button>
+  <button id="btn-logout" style="display:none">Log out</button>
+
+  <h2 id="hello" style="display:none"></h2>
+  <pre id="profile"></pre>
+
+  <!-- nuestro código -->
+  <script type="module" src="auth.js"></script>
+</body>
+</html>
