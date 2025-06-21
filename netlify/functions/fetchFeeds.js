@@ -1,8 +1,7 @@
 
 import Parser from 'rss-parser';
 import fs from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
 import db from './db.js';
 
 export const config = {
@@ -10,9 +9,8 @@ export const config = {
 };
 
 const parser = new Parser();
-const dir = dirname(fileURLToPath(import.meta.url));
 const channels = JSON.parse(
-  fs.readFileSync(join(dir, '../../channels.json'))
+  fs.readFileSync(join(process.cwd(), 'channels.json'), 'utf8')
 );
 
 export async function handler() {
