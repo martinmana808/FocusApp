@@ -1,7 +1,7 @@
 import Parser from 'rss-parser';
 import fs from 'fs';
 import { join } from 'path';
-import supabase from './db.js';
+import { supabase } from './db.js';
 
 /**
  * ⏰  Se ejecuta a las 03:00 UTC todos los días

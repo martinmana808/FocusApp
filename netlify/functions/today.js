@@ -1,4 +1,4 @@
-import supabase from './db.js';
+import { supabase } from './db.js';
 
 export async function handler() {
   const today = new Date().toISOString().slice(0, 10);
