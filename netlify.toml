@@ -4,5 +4,6 @@
   functions = "netlify/functions"
 
 [build.environment]
-  NODE_ENV     = "production"
-  NODE_VERSION = "18"         
+  NODE_VERSION               = "18"
+  NPM_CONFIG_BUILD_FROM_SOURCE = "true"
+  NPM_CONFIG_PREBUILD_INSTALL  = "false"
