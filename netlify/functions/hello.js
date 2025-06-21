@@ -1,6 +1,3 @@
-
-export default async () => ({
-  statusCode: 200,
-  body: 'Hola, Functions vivas 🔥'
-});
-
+export async function handler() {
+return { statusCode: 200, body: 'Hola, Functions vivas 🔥' };
+}

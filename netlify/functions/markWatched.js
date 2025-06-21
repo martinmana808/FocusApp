@@ -1,7 +1,5 @@
-
 import db from './db.js';
-
-export default async (event) => {
+export async function handler(event) {
   try {
     const { id } = JSON.parse(event.body || '{}');
     db.prepare('UPDATE videos SET watched = 1 WHERE id = ?').run(id);

@@ -15,7 +15,7 @@ const channels  = JSON.parse(
   fs.readFileSync(path.join(__dirname, '../../channels.json'))
 );
 
-export default async () => {
+export async function handler() {
   const today = new Date().toISOString().slice(0, 10);
   const insert = db.prepare(
     `INSERT OR IGNORE INTO videos
@@ -36,5 +36,5 @@ export default async () => {
   }
 
   return { statusCode: 200, body: 'ok' };
-};
+}
 

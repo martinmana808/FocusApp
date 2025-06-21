@@ -1,7 +1,5 @@
-
 import db from './db.js';
-
-export default async () => {
+export async function handler() {
   const today = new Date().toISOString().slice(0, 10);
   const rows  = db.prepare(
     `SELECT id,title,source
