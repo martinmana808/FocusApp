@@ -27,9 +27,10 @@ export async function handler() {
       // insertamos/actualizamos cada video del día
       for (const item of feed.items ?? []) {
         if (item.isoDate?.startsWith(today)) {
+          const videoId = item.id.replace('yt:video:', ''); // <-- NUEVO
           await supabase.from('videos').upsert(
             {
-              id:           item.id,     // videoId
+              id:           videoId,
               title:        item.title,
               published_at: item.isoDate,
               source:       name,
