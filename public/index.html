@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <title>Feed My Brain</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body{font-family:system-ui,sans-serif;max-width:600px;margin:2rem auto}
     #profile{white-space:pre-wrap;background:#f3f3f3;padding:1rem;border-radius:6px}
@@ -21,7 +22,7 @@
   <pre id="profile"></pre>
 
   <h3>Hoy</h3>
-  <ul id="today"></ul>
+  <ul id="today" class="grid gap-4 sm:grid-cols-2"></ul>
 
   <script type="module" src="auth.js"></script>
 </body>
