@@ -23,7 +23,7 @@ export async function handler() {
 
     try {
       const feed = await parser.parseURL(url);
-
+ 
       // insertamos/actualizamos cada video del día
       for (const item of feed.items ?? []) {
         if (item.isoDate?.startsWith(today)) {
