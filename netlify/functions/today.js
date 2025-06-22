@@ -1,15 +1,13 @@
 import { supabase } from './db.js';
 
 export async function handler() {
-  const now       = Date.now();
-  const yesterday = new Date(now - 24 * 60 * 60 * 1000).toISOString();
-
+  // últimos 7 días (7 * 24 h)
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const { data, error } = await supabase
     .from('videos')
-    .select('id,title,source')
-    .gte('published_at', yesterday)   // ≥ hace 24 h
-    .eq('watched', false)
+    .select('id,title,source,published_at,watched,saved_for_later')
+    .gte('published_at', sevenDaysAgo)          // últimos 7 días
     .order('published_at', { ascending: false });
 
   if (error) {
