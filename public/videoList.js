@@ -1,6 +1,7 @@
 /* ─── VIDEO LIST COMPONENT ────────────────────────────────── */
 import { CONFIG } from './config.js';
 import { fmtTime, cleanVideoId } from './utils.js';
+import { authManager } from './auth.js'; // Import authManager to get tokens
 
 class VideoList {
   constructor() {
@@ -23,13 +24,25 @@ class VideoList {
    */
   async loadToday() {
     try {
-      const res = await fetch(`${CONFIG.API.BASE_URL}${CONFIG.API.ENDPOINTS.TODAY}`);
+      const headers = {};
+      const token = await authManager.auth0.getTokenSilently();
+      headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`${CONFIG.API.BASE_URL}${CONFIG.API.ENDPOINTS.TODAY}`, { headers });
+      
+      if (!res.ok) {
+        // If the server returns an error, don't try to parse JSON
+        throw new Error(`Failed to load videos: ${res.status} ${res.statusText}`);
+      }
+      
       const list = await res.json();
       this.videos = list;
       this.render(list);
     } catch (error) {
       console.error('Error loading videos:', error);
-      this.render([]);
+      this.containerNew.innerHTML = `<li class="text-red-500">Could not load videos. Are you logged in?</li>`;
+      this.containerSaved.innerHTML = '';
+      this.updateBadges(0, 0);
     }
   }
 
@@ -104,9 +117,13 @@ class VideoList {
    */
   async markWatched(id) {
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      const token = await authManager.auth0.getTokenSilently();
+      headers['Authorization'] = `Bearer ${token}`;
+
       const response = await fetch(`${CONFIG.API.BASE_URL}${CONFIG.API.ENDPOINTS.MARK_WATCHED}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify({ id })
       });
       
@@ -134,8 +151,13 @@ class VideoList {
    */
   async resetWatched() {
     try {
+      const headers = {};
+      const token = await authManager.auth0.getTokenSilently();
+      headers['Authorization'] = `Bearer ${token}`;
+
       const response = await fetch(`${CONFIG.API.BASE_URL}/resetWatched`, {
-        method: 'POST'
+        method: 'POST',
+        headers: headers
       });
       
       if (response.ok) {
@@ -152,13 +174,17 @@ class VideoList {
 
   async toggleSavedForLater(id) {
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      const token = await authManager.auth0.getTokenSilently();
+      headers['Authorization'] = `Bearer ${token}`;
+
       const idx = this.videos.findIndex(v => v.id === id);
       if (idx === -1) return;
       const video = this.videos[idx];
       const wasSaved = video.saved_for_later;
       const response = await fetch('/.netlify/functions/toggleSavedForLater', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify({ id })
       });
       if (response.ok) {

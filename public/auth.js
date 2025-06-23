@@ -6,32 +6,37 @@ import { CONFIG } from './config.js';
 class AuthManager {
   constructor() {
     this.auth0 = null;
-    this.init();
   }
 
   async init() {
-    // Initialize Auth0 client
+    console.log('[Auth] Initializing AuthManager...');
     this.auth0 = await createAuth0Client({
       domain: CONFIG.AUTH0.DOMAIN,
       clientId: CONFIG.AUTH0.CLIENT_ID,
-      authorizationParams: { redirect_uri: CONFIG.AUTH0.REDIRECT_URI }
+      authorizationParams: {
+        redirect_uri: CONFIG.AUTH0.REDIRECT_URI,
+        audience: `https://${CONFIG.AUTH0.DOMAIN}/api/v2/`
+      }
     });
 
     // Handle callback if present
-    await this.handleCallback();
-    
+    console.log('[Auth] Checking for redirect callback...');
+    if (location.search.includes('code=') && location.search.includes('state=')) {
+      console.log('[Auth] Found redirect params in URL, handling callback...');
+      try {
+        await this.auth0.handleRedirectCallback();
+        console.log('[Auth] Redirect callback handled successfully.');
+      } catch (e) {
+        console.error('[Auth] Error handling redirect callback:', e);
+        if (e.error !== 'invalid_state') throw e;
+      }
+      history.replaceState({}, '', '/');
+      console.log('[Auth] URL cleaned up.');
+    }
+
     // Set up auth buttons
     this.setupAuthButtons();
-  }
-
-  /**
-   * Handles Auth0 callback after login
-   */
-  async handleCallback() {
-    if (location.search.includes('code=') && location.search.includes('state=')) {
-      await this.auth0.handleRedirectCallback();
-      history.replaceState({}, '', '/');
-    }
+    console.log('[Auth] AuthManager initialized.');
   }
 
   /**
@@ -52,7 +57,9 @@ class AuthManager {
    * @returns {Promise<boolean>}
    */
   async isAuthenticated() {
-    return await this.auth0.isAuthenticated();
+    const isAuth = await this.auth0.isAuthenticated();
+    console.log('[Auth] isAuthenticated() check returned:', isAuth);
+    return isAuth;
   }
 
   /**
@@ -64,7 +71,11 @@ class AuthManager {
   }
 }
 
-export default AuthManager;
+// Instanciar y exponer la clase para usarla en el archivo
+const authManager = new AuthManager();
+await authManager.init();
+
+export { authManager };
 
 /* ─── CONFIG ──────────────────────────────────────────────── */
 const DOMAIN    = 'dev-zy2v2vb4ic7m785h.us.auth0.com';        // AUTH0_DOMAIN
@@ -121,7 +132,12 @@ $modal?.addEventListener('close', () => { $frame.src = ''; });
 
 /* ─── DATA LAYER ───────────────────────────────────────────── */
 async function loadToday() {
-  const res  = await fetch('/.netlify/functions/today');
+  let headers = {};
+  if (await authManager.isAuthenticated()) {
+    const token = await authManager.auth0.getTokenSilently();
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const res  = await fetch('/.netlify/functions/today', { headers });
   const list = await res.json();
 
   $today.innerHTML = list.length
@@ -146,9 +162,14 @@ async function loadToday() {
 
 /* Marcar visto sin quitar la tarjeta */
 window.markWatched = async id => {
+  let headers = { 'Content-Type': 'application/json' };
+  if (await authManager.isAuthenticated()) {
+    const token = await authManager.auth0.getTokenSilently();
+    headers['Authorization'] = `Bearer ${token}`;
+  }
   await fetch('/.netlify/functions/markWatched', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ id })
   });
   document.getElementById(`v-${id}`)?.classList.add('opacity-50');
@@ -156,7 +177,7 @@ window.markWatched = async id => {
 
 /* ─── RENDER LOOP ──────────────────────────────────────────── */
 async function refreshUI() {
-  const ok = await auth0.isAuthenticated();
+  const ok = await authManager.isAuthenticated();
 
   $login.style.display  = ok ? 'none'          : 'inline-block';
   $logout.style.display = ok ? 'inline-block'  : 'none';
@@ -167,12 +188,10 @@ async function refreshUI() {
     return;
   }
 
-  const user = await auth0.getUser();
+  const user = await authManager.getUser();
   $hello.style.display = 'block';
   $hello.textContent   = `Hi ${user.nickname}!`;
   $profile.textContent = JSON.stringify(user, null, 2);
 
   loadToday();
 }
-
-refreshUI();

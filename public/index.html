@@ -18,6 +18,21 @@
   <button id="btn-logout" style="display:none">Log out</button>
   <button id="btn-reset" onclick="resetWatched()" class="bg-red-500 text-white">Reset Watched</button>
 
+  <div id="user-actions" style="display: none;">
+    <h3 class="text-lg font-semibold mt-6 mb-2">My Feeds</h3>
+    <ul id="my-feeds-list" class="list-disc pl-5 mb-4">
+      <!-- La lista de feeds se renderizará aquí -->
+    </ul>
+
+    <form id="add-feed-form" class="mt-4">
+      <div class="flex">
+        <input type="url" id="feed-url-input" placeholder="Enter feed URL to follow..." class="flex-grow p-2 border rounded-l-md" required>
+        <button type="submit" class="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600">Add Feed</button>
+      </div>
+    </form>
+    <button id="sync-feeds-btn" class="bg-green-500 text-white p-2 rounded-md mt-2 w-full hover:bg-green-600">Sync My Feeds</button>
+  </div>
+
   <h2 id="hello" style="display:none"></h2>
   <pre id="profile"></pre>
 

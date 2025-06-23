@@ -1,7 +1,6 @@
 import Parser from 'rss-parser';
-import fs from 'fs';
-import { join } from 'path';
 import { supabase } from './db.js';
+import { getUserIdFromAuthHeader } from './auth.js';
 
 /**
  * ⏰  Se ejecuta a las 03:00 UTC todos los días
@@ -9,41 +8,66 @@ import { supabase } from './db.js';
  */
 export const config = { schedule: '0 3 * * *' };
 
-const parser   = new Parser();
-// leemos channels.json desde la raíz del proyecto
-const channels = JSON.parse(
-  fs.readFileSync(join(process.cwd(), 'channels.json'), 'utf8'),
-);
+const parser = new Parser();
 
-export async function handler() {
-  const today = new Date().toISOString().slice(0, 10);   // YYYY-MM-DD
-
-  for (const { id: channelId, name } of channels) {
-    const url  = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-
-    try {
-      const feed = await parser.parseURL(url);
- 
-      // insertamos/actualizamos cada video del día
-      for (const item of feed.items ?? []) {
-        if (item.isoDate?.startsWith(today)) {
-          const videoId = item.id.replace('yt:video:', ''); // <-- NUEVO
-          await supabase.from('videos').upsert(
-            {
-              id:           videoId,
-              title:        item.title,
-              published_at: item.isoDate,
-              source:       name,
-              fetched_on:   today,
-            },
-            { onConflict: 'id' },        // evita duplicados
-          );
-        }
-      }
-    } catch (err) {
-      console.error('RSS error', channelId, err.message);
-    }
+export async function handler(event) {
+  // 1. Identificar al usuario
+  const user_id = await getUserIdFromAuthHeader(event.headers);
+  if (!user_id) {
+    return { statusCode: 401, body: 'Unauthorized' };
   }
 
-  return { statusCode: 200, body: 'ok' };
+  try {
+    // 2. Obtener los feeds del usuario desde la base de datos
+    const { data: userFeeds, error: feedsError } = await supabase
+      .from('user_feeds')
+      .select('feed_url')
+      .eq('user_id', user_id);
+
+    if (feedsError) throw feedsError;
+
+    let newVideosCount = 0;
+
+    // 3. Iterar sobre cada feed del usuario
+    for (const feed of userFeeds) {
+      const parsedFeed = await parser.parseURL(feed.feed_url);
+
+      if (!parsedFeed?.items) continue;
+
+      // 4. Preparar los videos para guardarlos en la base de datos
+      const videosToInsert = parsedFeed.items.map(item => ({
+        id: item.guid || item.id,
+        user_id: user_id, // ¡Importante! Asociar al usuario
+        title: item.title,
+        source: parsedFeed.title,
+        published_at: item.isoDate,
+      }));
+
+      if (videosToInsert.length > 0) {
+        // 5. Insertar los videos en la tabla, ignorando duplicados para ese usuario
+        //    gracias a la clave primaria (id, user_id)
+        const { error: insertError } = await supabase
+          .from('videos')
+          .insert(videosToInsert, { onConflict: 'id,user_id' });
+        
+        if (insertError) {
+          console.warn(`Could not insert videos for feed ${feed.feed_url}:`, insertError.message);
+        } else {
+          newVideosCount += videosToInsert.length;
+        }
+      }
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: `Sync complete. Found ${newVideosCount} new videos.` }),
+    };
+
+  } catch (error) {
+    console.error('Error fetching or processing feeds:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Failed to process feeds.' }),
+    };
+  }
 }
