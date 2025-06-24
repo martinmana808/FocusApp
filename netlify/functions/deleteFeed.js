@@ -18,6 +18,14 @@ export async function handler(event) {
       return { statusCode: 400, body: 'Missing feed_id' };
     }
 
+    // Primero, eliminar los videos asociados a este feed y usuario
+    const { error: videoDeleteError } = await supabase
+      .from('videos')
+      .delete()
+      .eq('feed_id', feed_id)
+      .eq('user_id', user_id);
+    if (videoDeleteError) throw videoDeleteError;
+
     // 2. Eliminar el feed, asegurándose de que coincida tanto el id del feed como el id del usuario
     const { error } = await supabase
       .from('user_feeds')

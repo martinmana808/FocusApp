@@ -103,38 +103,41 @@ class App {
   }
 
   async handleDeleteFeed(e) {
-    if (e.target.dataset.action !== 'delete-feed') return;
-    
-    const feedId = e.target.dataset.id;
-    if (!feedId) return;
+  if (e.target.dataset.action !== 'delete-feed') return;
+  
+  const feedId = e.target.dataset.id;
+  if (!feedId) return;
 
-    if (!confirm('Are you sure you want to delete this feed?')) return;
+  if (!confirm('Are you sure you want to delete this feed?')) return;
 
-    try {
-      window.showToast('Deleting feed...');
-      const token = await authManager.auth0.getTokenSilently();
-      const res = await fetch('/.netlify/functions/deleteFeed', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ feed_id: feedId }),
-      });
+  try {
+    window.showToast('Deleting feed...');
+    const token = await authManager.auth0.getTokenSilently();
+    const res = await fetch('/.netlify/functions/deleteFeed', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ feed_id: feedId }),
+    });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || 'Failed to delete feed');
-      }
-
-      window.showToast('Feed deleted.');
-      this.loadUserFeeds();
-
-    } catch (error) {
-      console.error('Error deleting feed:', error);
-      window.showToast(`Error: ${error.message}`);
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(errorText || 'Failed to delete feed');
     }
+
+    window.showToast('Feed deleted.');
+    
+    // Refresh the feeds and videos without reloading
+    this.loadUserFeeds(); // This will refresh the feed list
+    await this.videoList.loadToday(); // This will refresh the video list
+
+  } catch (error) {
+    console.error('Error deleting feed:', error);
+    window.showToast(`Error: ${error.message}`);
   }
+}
 
   async loadUserFeeds() {
     try {
