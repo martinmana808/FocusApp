@@ -35,8 +35,8 @@ class AuthManager {
     }
 
     // Set up auth buttons
-    this.setupAuthButtons();
-    console.log('[Auth] AuthManager initialized.');
+    // this.setupAuthButtons();
+    // console.log('[Auth] AuthManager initialized.');
   }
 
   /**
@@ -47,9 +47,7 @@ class AuthManager {
     const logoutBtn = document.querySelector(CONFIG.UI.SELECTORS.LOGOUT_BTN);
 
     loginBtn.onclick = () => this.auth0.loginWithRedirect();
-    logoutBtn.onclick = () => this.auth0.logout({ 
-      logoutParams: { returnTo: CONFIG.AUTH0.REDIRECT_URI } 
-    });
+    logoutBtn.onclick = () => this.logout();
   }
 
   /**
@@ -68,6 +66,16 @@ class AuthManager {
    */
   async getUser() {
     return await this.auth0.getUser();
+  }
+
+  logout() {
+    this.auth0.logout({
+      logoutParams: { returnTo: CONFIG.AUTH0.REDIRECT_URI }
+    });
+  }
+
+  login() {
+    this.auth0.loginWithRedirect();
   }
 }
 
