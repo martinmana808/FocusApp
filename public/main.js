@@ -33,11 +33,10 @@ class App {
    */
   setupUIElements() {
     this.uiElements = {
-      login: document.querySelector(CONFIG.UI.SELECTORS.LOGIN_BTN),
-      logout: document.querySelector(CONFIG.UI.SELECTORS.LOGOUT_BTN),
-      hello: document.querySelector(CONFIG.UI.SELECTORS.HELLO),
-      profile: document.querySelector(CONFIG.UI.SELECTORS.PROFILE),
-      userActions: document.getElementById('user-actions'),
+      login: document.getElementById('btn-login'),
+      logout: document.getElementById('btn-logout'),
+      avatar: document.getElementById('avatar'),
+      userInfo: document.getElementById('user-info'),
       addFeedForm: document.getElementById('add-feed-form'),
       feedUrlInput: document.getElementById('feed-url-input'),
       syncFeedsBtn: document.getElementById('sync-feeds-btn'),
@@ -103,41 +102,42 @@ class App {
   }
 
   async handleDeleteFeed(e) {
-  if (e.target.dataset.action !== 'delete-feed') return;
-  
-  const feedId = e.target.dataset.id;
-  if (!feedId) return;
-
-  if (!confirm('Are you sure you want to delete this feed?')) return;
-
-  try {
-    window.showToast('Deleting feed...');
-    const token = await authManager.auth0.getTokenSilently();
-    const res = await fetch('/.netlify/functions/deleteFeed', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ feed_id: feedId }),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(errorText || 'Failed to delete feed');
-    }
-
-    window.showToast('Feed deleted.');
+    if (e.target.dataset.action !== 'delete-feed') return;
     
-    // Refresh the feeds and videos without reloading
-    this.loadUserFeeds(); // This will refresh the feed list
-    await this.videoList.loadToday(); // This will refresh the video list
+    const feedId = e.target.dataset.id;
+    const feedName = e.target.dataset.name;
+    if (!feedId) return;
 
-  } catch (error) {
-    console.error('Error deleting feed:', error);
-    window.showToast(`Error: ${error.message}`);
+    if (!confirm(`Are you sure you want to delete the feed: ${feedName}?`)) return;
+
+    try {
+      window.showToast('Deleting feed...');
+      const token = await authManager.auth0.getTokenSilently();
+      const res = await fetch('/.netlify/functions/deleteFeed', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ feed_id: feedId }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || 'Failed to delete feed');
+      }
+
+      window.showToast('Feed deleted.');
+      
+      // Refresh the feeds and videos without reloading
+      this.loadUserFeeds(); // This will refresh the feed list
+      await this.videoList.loadToday(); // This will refresh the video list
+
+    } catch (error) {
+      console.error('Error deleting feed:', error);
+      window.showToast(`Error: ${error.message}`);
+    }
   }
-}
 
   async loadUserFeeds() {
     try {
@@ -151,7 +151,7 @@ class App {
       this.uiElements.myFeedsList.innerHTML = feeds.map(feed => `
         <li class="flex justify-between items-center mb-1">
           <span class="truncate" title="${feed.feed_url}">${feed.feed_title || feed.feed_url}</span>
-          <button data-id="${feed.id}" data-action="delete-feed" class="text-red-500 hover:text-red-700 text-xs ml-4">Delete</button>
+          <button data-id="${feed.id}" data-name="${feed.feed_title}" data-action="delete-feed" class="text-red-500 hover:text-red-700 text-xs ml-4">Delete</button>
         </li>
       `).join('');
 
@@ -179,37 +179,34 @@ class App {
     // Update auth button visibility
     this.uiElements.login.style.display = isAuthenticated ? 'none' : 'inline-block';
     this.uiElements.logout.style.display = isAuthenticated ? 'inline-block' : 'none';
-    this.uiElements.userActions.style.display = isAuthenticated ? 'block' : 'none';
 
-    // Load user data and feeds if authenticated
+    // Render user info/avatar
     if (isAuthenticated) {
-      this.loadUserFeeds();
       const user = await authManager.getUser();
-      this.uiElements.hello.style.display = 'block';
-      this.uiElements.hello.textContent = `Hi ${user.nickname}!`;
-      this.uiElements.profile.textContent = JSON.stringify(user, null, 2);
+      // Avatar
+      if (user.picture) {
+        this.uiElements.avatar.innerHTML = `<img src="${user.picture}" alt="avatar" class="w-16 h-16 rounded-full object-cover">`;
+      } else {
+        this.uiElements.avatar.innerHTML = `<div class="w-16 h-16 rounded-full bg-gray-400 flex items-center justify-center text-2xl text-white">${user.given_name ? user.given_name[0] : ''}</div>`;
+      }
+      // Name, Surname, Logout
+      this.uiElements.userInfo.innerHTML = `
+        <div class="font-semibold">${user.given_name || ''} ${user.family_name || ''}</div>
+        <button id="btn-logout" class="mt-2 bg-red-500 text-white px-3 py-1 rounded">Log out</button>
+      `;
+      // Attach logout event
+      document.getElementById('btn-logout').onclick = () => authManager.logout();
+      this.loadUserFeeds();
+    } else {
+      this.uiElements.avatar.innerHTML = `<div class="w-16 h-16 rounded-full bg-gray-400 flex items-center justify-center text-2xl text-white">?</div>`;
+      this.uiElements.userInfo.innerHTML = `<button id="btn-login" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded">Log in</button>`;
+      document.getElementById('btn-login').onclick = () => authManager.login();
     }
 
     // Load videos (show read-only list even without login)
     console.log('[App] Loading video list...');
     await this.videoList.loadToday();
     console.log('[App] Video list loaded.');
-
-    if (!isAuthenticated) {
-      this.uiElements.hello.style.display = 'none';
-      this.uiElements.profile.textContent = '';
-      console.log('[App] User is not authenticated. UI refresh finished.');
-      return;
-    }
-
-    // Show user info if authenticated
-    console.log('[App] User is authenticated, getting user data...');
-    const user = await authManager.getUser();
-    console.log('[App] User data:', user);
-    this.uiElements.hello.style.display = 'block';
-    this.uiElements.hello.textContent = `Hi ${user.nickname}!`;
-    this.uiElements.profile.textContent = JSON.stringify(user, null, 2);
-    console.log('[App] UI updated for authenticated user.');
   }
 }
 
