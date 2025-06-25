@@ -32,3 +32,17 @@ export const fmtTime = iso => {
  * @returns {string} Cleaned video ID
  */
 export const cleanVideoId = id => id.replace(/^yt:video:/, ''); 
+
+export function showSpinner() {
+  const spinner = document.getElementById('global-spinner');
+  if (spinner) {
+    spinner.style.display = 'flex';
+  }
+}
+
+export function hideSpinner() {
+  const spinner = document.getElementById('global-spinner');
+  if (spinner) {
+    spinner.style.display = 'none';
+  }
+} 

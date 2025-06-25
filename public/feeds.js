@@ -1,5 +1,6 @@
 console.log('[Feeds] feeds.js loaded');
 import { authManager } from './auth.js';
+import { showSpinner, hideSpinner } from './utils.js';
 
 // Utility to get DOM elements
 function $(selector) {
@@ -30,48 +31,88 @@ async function fetchFeeds() {
 }
 
 async function addFeed(feedUrl) {
-  console.log('[Feeds] Adding feed:', feedUrl);
-  const token = await authManager.auth0.getTokenSilently();
-  const res = await fetch('/.netlify/functions/addFeed', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ feed_url: feedUrl }),
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error('[Feeds] Error adding feed:', errText);
-    throw new Error(errText);
+  showSpinner();
+  try {
+    console.log('[Feeds] Adding feed:', feedUrl);
+    const token = await authManager.auth0.getTokenSilently();
+    const res = await fetch('/.netlify/functions/addFeed', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ feed_url: feedUrl }),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('[Feeds] Error adding feed:', errText);
+      throw new Error(errText);
+    }
+    const data = await res.json();
+    console.log('[Feeds] Feed added:', data);
+    await syncSingleFeedAndRenderVideos(data.id);
+    return data;
+  } finally {
+    hideSpinner();
   }
-  const data = await res.json();
-  console.log('[Feeds] Feed added:', data);
-  // --- Automatically sync videos after adding a feed ---
-  await syncFeedsAndRefreshVideos();
-  return data;
 }
 
-// Add this helper method to sync feeds and refresh videos
-async function syncFeedsAndRefreshVideos() {
+// Helper to sync a single feed and render its videos
+async function syncSingleFeedAndRenderVideos(feedId) {
+  showSpinner();
   try {
     const token = await authManager.auth0.getTokenSilently();
-    window.showToast('Syncing your feeds...');
+    window.showToast('Syncing new feed...');
+    const res = await fetch('/.netlify/functions/syncFeed', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feed_id: feedId })
+    });
+    if (!res.ok) throw new Error('Sync failed');
+    const videos = await res.json();
+    window.showToast('Feed synced!');
+    renderNewFeedVideos(videos);
+  } catch (error) {
+    console.error('[Feeds] Failed to sync new feed:', error);
+    window.showToast(`Sync Error: ${error.message}`);
+  } finally {
+    hideSpinner();
+  }
+}
+
+// Helper to render just the new feed's videos (append to video list)
+function renderNewFeedVideos(videos) {
+  if (!Array.isArray(videos) || !videos.length) return;
+  // You may need to adapt this to your video list rendering logic
+  if (window.app && window.app.videoList && window.app.videoList.appendVideos) {
+    window.app.videoList.appendVideos(videos);
+  } else if (typeof renderVideoList === 'function') {
+    renderVideoList(videos, { append: true });
+  } else {
+    // fallback: log
+    console.log('[Feeds] New feed videos:', videos);
+  }
+}
+
+// Exported function to do a full sync on first page load (per session)
+export async function syncAllFeedsOncePerSession() {
+  if (sessionStorage.getItem('feedsSynced')) return;
+  showSpinner();
+  try {
+    const token = await authManager.auth0.getTokenSilently();
+    window.showToast('Syncing all feeds (first load)...');
     const res = await fetch('/.netlify/functions/fetchFeeds', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!res.ok) throw new Error('Sync failed');
-    window.showToast('Sync complete! Refreshing list...');
-    // Try to refresh the video list if available
-    if (window.app && window.app.videoList && window.app.videoList.loadToday) {
-      await window.app.videoList.loadToday();
-    } else if (typeof renderVideoList === 'function') {
-      await renderVideoList();
-    }
+    if (!res.ok) throw new Error('Full sync failed');
+    sessionStorage.setItem('feedsSynced', '1');
+    window.showToast('All feeds synced!');
   } catch (error) {
-    console.error('[Feeds] Failed to sync feeds:', error);
+    console.error('[Feeds] Failed to sync all feeds:', error);
     window.showToast(`Sync Error: ${error.message}`);
+  } finally {
+    hideSpinner();
   }
 }
 

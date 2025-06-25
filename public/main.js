@@ -14,6 +14,7 @@ import { authManager } from './auth.js';
 import VideoPlayer from './player.js';
 import VideoList from './videoList.js';
 import { renderFeedList } from './feeds.js';
+import { showSpinner, hideSpinner } from './utils.js';
 
 class App {
   constructor() {
@@ -66,7 +67,7 @@ class App {
     e.preventDefault();
     const url = this.uiElements.feedUrlInput.value.trim();
     if (!url) return;
-
+    showSpinner();
     window.showToast('Adding feed...');
     try {
       const token = await authManager.auth0.getTokenSilently();
@@ -78,25 +79,25 @@ class App {
         },
         body: JSON.stringify({ feed_url: url }),
       });
-
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(errorText || `Failed to add feed`);
       }
-      
       this.uiElements.feedUrlInput.value = '';
       window.showToast('Feed added! Syncing...');
       this.loadUserFeeds();
-      // --- Automatically sync videos after adding a feed ---
       await this.syncFeedsAndRefreshVideos();
     } catch (error) {
       console.error('Failed to add feed:', error);
       window.showToast(error.message);
+    } finally {
+      hideSpinner();
     }
   }
 
   // Add this helper method to sync feeds and refresh videos
   async syncFeedsAndRefreshVideos() {
+    showSpinner();
     try {
       const token = await authManager.auth0.getTokenSilently();
       window.showToast('Syncing your feeds...');
@@ -110,10 +111,13 @@ class App {
     } catch (error) {
       console.error('Failed to sync feeds:', error);
       window.showToast(`Sync Error: ${error.message}`);
+    } finally {
+      hideSpinner();
     }
   }
 
   async handleSyncFeeds() {
+    showSpinner();
     window.showToast('Syncing your feeds...');
     try {
       const token = await authManager.auth0.getTokenSilently();
@@ -123,14 +127,14 @@ class App {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-
       if (!res.ok) throw new Error('Sync failed');
-
       window.showToast('Sync complete! Refreshing list...');
       await this.videoList.loadToday();
     } catch (error) {
       console.error('Failed to sync feeds:', error);
       window.showToast(`Sync Error: ${error.message}`);
+    } finally {
+      hideSpinner();
     }
   }
 
@@ -143,6 +147,7 @@ class App {
 
     if (!confirm(`Are you sure you want to delete the feed: ${feedName}?`)) return;
 
+    showSpinner();
     try {
       window.showToast('Deleting feed...');
       const token = await authManager.auth0.getTokenSilently();
@@ -169,10 +174,13 @@ class App {
     } catch (error) {
       console.error('Error deleting feed:', error);
       window.showToast(`Error: ${error.message}`);
+    } finally {
+      hideSpinner();
     }
   }
 
   async loadUserFeeds() {
+    showSpinner();
     try {
       const token = await authManager.auth0.getTokenSilently();
       const res = await fetch('/.netlify/functions/getFeeds', {
@@ -191,6 +199,8 @@ class App {
     } catch (error) {
       console.error('Error loading user feeds:', error);
       this.uiElements.myFeedsList.innerHTML = `<li class="text-red-500">${error.message}</li>`;
+    } finally {
+      hideSpinner();
     }
   }
 
@@ -204,6 +214,7 @@ class App {
   /**
    * Refreshes the UI based on authentication state
    */
+  
   async refreshUI() {
     console.log('[App] Refreshing UI...');
     const isAuthenticated = await authManager.isAuthenticated();
@@ -229,15 +240,39 @@ class App {
       `;
       // Attach logout event
       document.getElementById('btn-logout').onclick = () => authManager.logout();
-      this.loadUserFeeds();
       // --- Ensure feed list is rendered after auth ---
       try {
-        console.log('[App] Calling renderFeedList after auth...');
+        // --- Sync all feeds once per session ---
+        await syncAllFeedsOncePerSession();
+      } catch (err) {
+        console.error('[App] Error during feed sync:', err);
+      }
+
+      
+
+      // TEST: Force getFeeds after authentication
+      try {
+        const token = await authManager.auth0.getTokenSilently();
+        const res = await fetch('/.netlify/functions/getFeeds', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const feeds = await res.json();
+        console.log('[TEST] Forced getFeeds result:', feeds);
+        // Optionally, show in UI:
+        // window.showToast('Fetched feeds: ' + JSON.stringify(feeds));
+      } catch (err) {
+        console.error('[TEST] Error forcing getFeeds:', err);
+      }
+          
+      // --- Always render feeds after sync attempt ---
+      try {
         await renderFeedList();
         console.log('[App] renderFeedList finished.');
       } catch (err) {
         console.error('[App] Error calling renderFeedList:', err);
       }
+      // Optionally update sidebar feed list if needed
+      // await this.loadUserFeeds();
     } else {
       this.uiElements.avatar.innerHTML = `<div class="w-16 h-16 rounded-full bg-gray-400 flex items-center justify-center text-2xl text-white">?</div>`;
       this.uiElements.userInfo.innerHTML = `<button id="btn-login" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded">Log in</button>`;
