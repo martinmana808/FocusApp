@@ -1,7 +1,7 @@
 ─── TODO ────────────────────────────────────────────────────────────
 
 ☐ After deleting a feed, corresponsing videos should be deleted from the DB
-☐ 
+☐ CACHE user logged in/out
 ☐ 
 ☐ 
 ☐ 

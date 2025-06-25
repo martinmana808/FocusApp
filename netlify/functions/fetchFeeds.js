@@ -12,6 +12,9 @@ const parser = new Parser();
 
 export async function handler(event) {
   console.log('[fetchFeeds] Starting...');
+  console.log('[fetchFeeds] Incoming headers:', JSON.stringify(event.headers));
+  const authHeader = event.headers.authorization || event.headers.Authorization;
+  console.log('[fetchFeeds] Authorization header:', authHeader);
   // 1. Identificar al usuario
   const user_id = await getUserIdFromAuthHeader(event.headers);
   if (!user_id) {
@@ -40,6 +43,7 @@ export async function handler(event) {
         console.log('[fetchFeeds] No items in feed:', feed.feed_url);
         continue;
       }
+      console.log(`[fetchFeeds] Found ${parsedFeed.items.length} items in feed:`, feed.feed_url);
 
       // 4. Preparar los videos para guardarlos en la base de datos
       const videosToInsert = parsedFeed.items.map(item => ({
@@ -64,8 +68,10 @@ export async function handler(event) {
           console.warn(`Could not insert videos for feed ${feed.feed_url}:`, insertError.message);
         } else {
           newVideosCount += videosToInsert.length;
-          console.log('[fetchFeeds] Inserted videos count:', newVideosCount);
+          console.log(`[fetchFeeds] Inserted ${videosToInsert.length} videos for feed:`, feed.feed_url);
         }
+      } else {
+        console.log('[fetchFeeds] No videos to insert for feed:', feed.feed_url);
       }
     }
 

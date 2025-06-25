@@ -231,135 +231,32 @@
         <!-- Left Column -->
         <div class="left-column w-1/3 min-w-[300px]">
           <!-- Profile Section -->
-          <div id="profile-section"></div>
+          <div id="profile-section" class="bg-white rounded shadow p-4 mb-6">
+          </div>
           
 
           <!-- Feed Management -->
           <div class="bg-white rounded shadow p-4 mb-6">
             <h2 class="text-lg font-medium mb-4">Manage Feeds</h2>
 
-            <div class="flex mb-4">
+            <form id="add-feed-form" class="flex mb-4">
               <input
                 type="text"
+                id="feed-url-input"
                 placeholder="Enter feed URL"
                 class="flex-1 px-3 py-2 border border-gray-300 rounded-l-button focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
               />
               <button
                 class="bg-primary text-white px-4 py-2 rounded-r-button hover:bg-primary/90 transition-colors whitespace-nowrap"
+                type="submit"
               >
                 <i class="ri-add-line mr-1"></i> Add
               </button>
-            </div>
+            </form>
 
             <div class="mt-4 max-h-[400px] overflow-y-auto">
               <div class="feed-list space-y-2">
-                <div
-                  class="feed-item flex items-center justify-between p-2 rounded"
-                >
-                  <div class="flex items-center">
-                    <div
-                      class="w-8 h-8 flex items-center justify-center text-red-500 mr-2"
-                    >
-                      <i class="ri-youtube-line"></i>
-                    </div>
-                    <span>TED Talks</span>
-                  </div>
-                  <button
-                    class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center"
-                  >
-                    <i class="ri-delete-bin-line"></i>
-                  </button>
-                </div>
-
-                <div
-                  class="feed-item flex items-center justify-between p-2 rounded"
-                >
-                  <div class="flex items-center">
-                    <div
-                      class="w-8 h-8 flex items-center justify-center text-blue-500 mr-2"
-                    >
-                      <i class="ri-rss-line"></i>
-                    </div>
-                    <span>MIT OpenCourseWare</span>
-                  </div>
-                  <button
-                    class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center"
-                  >
-                    <i class="ri-delete-bin-line"></i>
-                  </button>
-                </div>
-
-                <div
-                  class="feed-item flex items-center justify-between p-2 rounded"
-                >
-                  <div class="flex items-center">
-                    <div
-                      class="w-8 h-8 flex items-center justify-center text-purple-500 mr-2"
-                    >
-                      <i class="ri-youtube-line"></i>
-                    </div>
-                    <span>Crash Course</span>
-                  </div>
-                  <button
-                    class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center"
-                  >
-                    <i class="ri-delete-bin-line"></i>
-                  </button>
-                </div>
-
-                <div
-                  class="feed-item flex items-center justify-between p-2 rounded"
-                >
-                  <div class="flex items-center">
-                    <div
-                      class="w-8 h-8 flex items-center justify-center text-green-500 mr-2"
-                    >
-                      <i class="ri-youtube-line"></i>
-                    </div>
-                    <span>Khan Academy</span>
-                  </div>
-                  <button
-                    class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center"
-                  >
-                    <i class="ri-delete-bin-line"></i>
-                  </button>
-                </div>
-
-                <div
-                  class="feed-item flex items-center justify-between p-2 rounded"
-                >
-                  <div class="flex items-center">
-                    <div
-                      class="w-8 h-8 flex items-center justify-center text-yellow-500 mr-2"
-                    >
-                      <i class="ri-rss-line"></i>
-                    </div>
-                    <span>National Geographic</span>
-                  </div>
-                  <button
-                    class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center"
-                  >
-                    <i class="ri-delete-bin-line"></i>
-                  </button>
-                </div>
-
-                <div
-                  class="feed-item flex items-center justify-between p-2 rounded"
-                >
-                  <div class="flex items-center">
-                    <div
-                      class="w-8 h-8 flex items-center justify-center text-pink-500 mr-2"
-                    >
-                      <i class="ri-youtube-line"></i>
-                    </div>
-                    <span>Kurzgesagt</span>
-                  </div>
-                  <button
-                    class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center"
-                  >
-                    <i class="ri-delete-bin-line"></i>
-                  </button>
-                </div>
+                <!-- Feed items will be rendered here by feeds.js -->
               </div>
             </div>
           </div>
@@ -426,7 +323,43 @@
           <!-- New Videos Section -->
           <div class="new-videos-section">
             <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl font-medium">New Videos</h2>
+              <div class="flex items-center gap-4">
+                <h2 class="text-xl font-medium">New Videos</h2>
+                <div class="relative">
+                  <button
+                    id="timeFilterBtn"
+                    class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-button hover:bg-gray-50 whitespace-nowrap"
+                  >
+                    <span id="selectedTimeFilter">Today</span>
+                    <i class="ri-arrow-down-s-line"></i>
+                  </button>
+                  <div
+                    id="timeFilterDropdown"
+                    class="absolute left-0 mt-1 w-36 bg-white border border-gray-300 rounded shadow-lg hidden z-10"
+                  >
+                    <div class="py-1">
+                      <button
+                        class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap"
+                        data-value="today"
+                      >
+                        Today
+                      </button>
+                      <button
+                        class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap"
+                        data-value="week"
+                      >
+                        This week
+                      </button>
+                      <button
+                        class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap"
+                        data-value="month"
+                      >
+                        This month
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <button
                 class="text-sm text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
               >
@@ -434,216 +367,7 @@
               </button>
             </div>
 
-            <div class="grid grid-cols-1 gap-4">
-              <!-- Video Card 1 -->
-              <div class="video-card bg-white rounded shadow p-4">
-                <div class="flex">
-                  <div
-                    class="w-32 h-20 rounded overflow-hidden mr-4 flex-shrink-0"
-                  >
-                    <img
-                      src="https://readdy.ai/api/search-image?query=screenshot%20of%20a%20science%20video%20about%20quantum%20physics%2C%20educational%20content%2C%20high%20quality%20thumbnail%20with%20text%20overlay%2C%20professional%20lighting%2C%20clean%20design&width=128&height=80&seq=2&orientation=landscape"
-                      alt="Video Thumbnail"
-                      class="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                  <div class="flex-1">
-                    <h3 class="font-medium mb-1 line-clamp-2">
-                      Quantum Physics Explained: Understanding the Microscopic
-                      Universe
-                    </h3>
-                    <div class="flex items-center text-sm text-gray-500 mb-2">
-                      <span class="mr-3">Crash Course</span>
-                      <span>June 23, 2025</span>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                      <button
-                        class="text-primary hover:text-primary/80 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-play-circle-line ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-gray-500 hover:text-primary transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-bookmark-line ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-gray-500 hover:text-green-500 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-check-double-line ri-lg"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Video Card 2 -->
-              <div class="video-card bg-white rounded shadow p-4">
-                <div class="flex">
-                  <div
-                    class="w-32 h-20 rounded overflow-hidden mr-4 flex-shrink-0"
-                  >
-                    <img
-                      src="https://readdy.ai/api/search-image?query=screenshot%20of%20a%20history%20documentary%20about%20ancient%20civilizations%2C%20educational%20content%2C%20high%20quality%20thumbnail%20with%20text%20overlay%2C%20professional%20lighting%2C%20clean%20design&width=128&height=80&seq=3&orientation=landscape"
-                      alt="Video Thumbnail"
-                      class="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                  <div class="flex-1">
-                    <h3 class="font-medium mb-1 line-clamp-2">
-                      Lost Civilizations: The Mysterious Collapse of Ancient
-                      Societies
-                    </h3>
-                    <div class="flex items-center text-sm text-gray-500 mb-2">
-                      <span class="mr-3">National Geographic</span>
-                      <span>June 22, 2025</span>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                      <button
-                        class="text-primary hover:text-primary/80 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-play-circle-line ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-gray-500 hover:text-primary transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-bookmark-line ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-gray-500 hover:text-green-500 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-check-double-line ri-lg"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Video Card 3 -->
-              <div class="video-card bg-white rounded shadow p-4">
-                <div class="flex">
-                  <div
-                    class="w-32 h-20 rounded overflow-hidden mr-4 flex-shrink-0"
-                  >
-                    <img
-                      src="https://readdy.ai/api/search-image?query=screenshot%20of%20a%20TED%20talk%20about%20artificial%20intelligence%2C%20speaker%20on%20stage%2C%20educational%20content%2C%20high%20quality%20thumbnail%2C%20professional%20lighting%2C%20clean%20design&width=128&height=80&seq=4&orientation=landscape"
-                      alt="Video Thumbnail"
-                      class="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                  <div class="flex-1">
-                    <h3 class="font-medium mb-1 line-clamp-2">
-                      The Future of AI: How Machine Learning Will Transform Our
-                      Lives
-                    </h3>
-                    <div class="flex items-center text-sm text-gray-500 mb-2">
-                      <span class="mr-3">TED Talks</span>
-                      <span>June 21, 2025</span>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                      <button
-                        class="text-primary hover:text-primary/80 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-play-circle-line ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-gray-500 hover:text-primary transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-bookmark-line ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-gray-500 hover:text-green-500 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-check-double-line ri-lg"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Video Card 4 -->
-              <div class="video-card bg-white rounded shadow p-4">
-                <div class="flex">
-                  <div
-                    class="w-32 h-20 rounded overflow-hidden mr-4 flex-shrink-0"
-                  >
-                    <img
-                      src="https://readdy.ai/api/search-image?query=screenshot%20of%20a%20math%20education%20video%20about%20calculus%2C%20educational%20content%20with%20equations%2C%20high%20quality%20thumbnail%20with%20text%20overlay%2C%20professional%20lighting%2C%20clean%20design&width=128&height=80&seq=5&orientation=landscape"
-                      alt="Video Thumbnail"
-                      class="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                  <div class="flex-1">
-                    <h3 class="font-medium mb-1 line-clamp-2">
-                      Calculus Made Easy: Understanding Derivatives and
-                      Integrals
-                    </h3>
-                    <div class="flex items-center text-sm text-gray-500 mb-2">
-                      <span class="mr-3">Khan Academy</span>
-                      <span>June 20, 2025</span>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                      <button
-                        class="text-primary hover:text-primary/80 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-play-circle-line ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-gray-500 hover:text-primary transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-bookmark-line ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-gray-500 hover:text-green-500 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-check-double-line ri-lg"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Video Card 5 -->
-              <div class="video-card bg-white rounded shadow p-4">
-                <div class="flex">
-                  <div
-                    class="w-32 h-20 rounded overflow-hidden mr-4 flex-shrink-0"
-                  >
-                    <img
-                      src="https://readdy.ai/api/search-image?query=screenshot%20of%20a%20science%20video%20about%20climate%20change%20with%20data%20visualization%2C%20educational%20content%2C%20high%20quality%20thumbnail%20with%20text%20overlay%2C%20professional%20lighting%2C%20clean%20design&width=128&height=80&seq=6&orientation=landscape"
-                      alt="Video Thumbnail"
-                      class="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                  <div class="flex-1">
-                    <h3 class="font-medium mb-1 line-clamp-2">
-                      Climate Change: The Science Behind Global Warming
-                    </h3>
-                    <div class="flex items-center text-sm text-gray-500 mb-2">
-                      <span class="mr-3">Kurzgesagt</span>
-                      <span>June 19, 2025</span>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                      <button
-                        class="text-primary hover:text-primary/80 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-play-circle-line ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-gray-500 hover:text-primary transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-bookmark-line ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-gray-500 hover:text-green-500 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-check-double-line ri-lg"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ul id="new" class="grid grid-cols-1 gap-4"></ul>
           </div>
 
           <!-- Saved Videos Section (Hidden by default) -->
@@ -657,132 +381,7 @@
               </button>
             </div>
 
-            <div class="grid grid-cols-1 gap-4">
-              <!-- Saved Video Card 1 -->
-              <div class="video-card bg-white rounded shadow p-4">
-                <div class="flex">
-                  <div
-                    class="w-32 h-20 rounded overflow-hidden mr-4 flex-shrink-0"
-                  >
-                    <img
-                      src="https://readdy.ai/api/search-image?query=screenshot%20of%20a%20psychology%20lecture%20about%20memory%20and%20learning%2C%20educational%20content%2C%20high%20quality%20thumbnail%20with%20text%20overlay%2C%20professional%20lighting%2C%20clean%20design&width=128&height=80&seq=7&orientation=landscape"
-                      alt="Video Thumbnail"
-                      class="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                  <div class="flex-1">
-                    <h3 class="font-medium mb-1 line-clamp-2">
-                      The Science of Memory: How We Learn and Why We Forget
-                    </h3>
-                    <div class="flex items-center text-sm text-gray-500 mb-2">
-                      <span class="mr-3">MIT OpenCourseWare</span>
-                      <span>June 15, 2025</span>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                      <button
-                        class="text-primary hover:text-primary/80 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-play-circle-line ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-primary hover:text-gray-500 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-bookmark-fill ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-green-500 hover:text-gray-500 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-check-double-fill ri-lg"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Saved Video Card 2 -->
-              <div class="video-card bg-white rounded shadow p-4">
-                <div class="flex">
-                  <div
-                    class="w-32 h-20 rounded overflow-hidden mr-4 flex-shrink-0"
-                  >
-                    <img
-                      src="https://readdy.ai/api/search-image?query=screenshot%20of%20a%20biology%20video%20about%20human%20evolution%2C%20educational%20content%20with%20diagrams%2C%20high%20quality%20thumbnail%20with%20text%20overlay%2C%20professional%20lighting%2C%20clean%20design&width=128&height=80&seq=8&orientation=landscape"
-                      alt="Video Thumbnail"
-                      class="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                  <div class="flex-1">
-                    <h3 class="font-medium mb-1 line-clamp-2">
-                      Human Evolution: The Journey from Primates to Modern
-                      Humans
-                    </h3>
-                    <div class="flex items-center text-sm text-gray-500 mb-2">
-                      <span class="mr-3">Crash Course</span>
-                      <span>June 10, 2025</span>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                      <button
-                        class="text-primary hover:text-primary/80 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-play-circle-line ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-primary hover:text-gray-500 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-bookmark-fill ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-gray-500 hover:text-green-500 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-check-double-line ri-lg"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Saved Video Card 3 -->
-              <div class="video-card bg-white rounded shadow p-4">
-                <div class="flex">
-                  <div
-                    class="w-32 h-20 rounded overflow-hidden mr-4 flex-shrink-0"
-                  >
-                    <img
-                      src="https://readdy.ai/api/search-image?query=screenshot%20of%20an%20astronomy%20video%20about%20black%20holes%2C%20educational%20content%20with%20space%20imagery%2C%20high%20quality%20thumbnail%20with%20text%20overlay%2C%20professional%20lighting%2C%20clean%20design&width=128&height=80&seq=9&orientation=landscape"
-                      alt="Video Thumbnail"
-                      class="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                  <div class="flex-1">
-                    <h3 class="font-medium mb-1 line-clamp-2">
-                      Black Holes Explained: The Most Mysterious Objects in the
-                      Universe
-                    </h3>
-                    <div class="flex items-center text-sm text-gray-500 mb-2">
-                      <span class="mr-3">Kurzgesagt</span>
-                      <span>June 5, 2025</span>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                      <button
-                        class="text-primary hover:text-primary/80 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-play-circle-line ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-primary hover:text-gray-500 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-bookmark-fill ri-lg"></i>
-                      </button>
-                      <button
-                        class="text-gray-500 hover:text-green-500 transition-colors w-8 h-8 flex items-center justify-center whitespace-nowrap"
-                      >
-                        <i class="ri-check-double-line ri-lg"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ul id="saved" class="grid grid-cols-1 gap-4"></ul>
           </div>
         </div>
       </div>
@@ -1059,86 +658,7 @@
       });
     </script>
 
-    <script id="feedManagement">
-      document.addEventListener("DOMContentLoaded", function () {
-        const addFeedForm = document.querySelector(".flex.mb-4");
-        const feedInput = addFeedForm.querySelector("input");
-        const addButton = addFeedForm.querySelector("button");
-        const feedList = document.querySelector(".feed-list");
-
-        addButton.addEventListener("click", function () {
-          const feedUrl = feedInput.value.trim();
-
-          if (feedUrl) {
-            // Create new feed item
-            const newFeed = document.createElement("div");
-            newFeed.className =
-              "feed-item flex items-center justify-between p-2 rounded";
-
-            // Determine icon based on URL (simple logic)
-            let iconClass = "ri-rss-line";
-            let iconColor = "text-blue-500";
-
-            if (feedUrl.includes("youtube") || feedUrl.includes("video")) {
-              iconClass = "ri-youtube-line";
-              iconColor = "text-red-500";
-            }
-
-            // Extract domain name for feed name
-            let feedName = "New Feed";
-            try {
-              const url = new URL(feedUrl);
-              feedName = url.hostname.replace("www.", "").split(".")[0];
-              // Capitalize first letter
-              feedName = feedName.charAt(0).toUpperCase() + feedName.slice(1);
-            } catch (e) {
-              // If not a valid URL, use input as name
-              feedName =
-                feedUrl.length > 20 ? feedUrl.substring(0, 20) + "..." : feedUrl;
-            }
-
-            newFeed.innerHTML = `
-                              <div class="flex items-center">
-                                  <div class="w-8 h-8 flex items-center justify-center ${iconColor} mr-2">
-                                      <i class="${iconClass}"></i>
-                                  </div>
-                                  <span>${feedName}</span>
-                              </div>
-                              <button class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center">
-                                  <i class="ri-delete-bin-line"></i>
-                              </button>
-                          `;
-
-            // Add delete functionality to new feed
-            const deleteButton = newFeed
-              .querySelector(".ri-delete-bin-line")
-              .closest("button");
-            deleteButton.addEventListener("click", function () {
-              feedToDelete = newFeed;
-              deleteDialog.classList.add("show");
-            });
-
-            // Add to feed list
-            feedList.prepend(newFeed);
-
-            // Clear input
-            feedInput.value = "";
-
-            // Show toast
-            showToast("Feed added successfully");
-          } else {
-            showToast("Please enter a valid feed URL");
-          }
-        });
-
-        // Allow pressing Enter to add feed
-        feedInput.addEventListener("keypress", function (e) {
-          if (e.key === "Enter") {
-            addButton.click();
-          }
-        });
-      });
-    </script>
+    
 
     <script id="darkModeToggle">
       document.addEventListener("DOMContentLoaded", function () {
@@ -1217,6 +737,69 @@
         }
       });
     </script>
+    <script id="timeFilterHandler">
+      document.addEventListener("DOMContentLoaded", function () {
+        const timeFilterBtn = document.getElementById("timeFilterBtn");
+        const timeFilterDropdown = document.getElementById("timeFilterDropdown");
+        const selectedTimeFilter = document.getElementById("selectedTimeFilter");
+        const filterOptions = timeFilterDropdown.querySelectorAll("button");
+        // Toggle dropdown
+        timeFilterBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          timeFilterDropdown.classList.toggle("hidden");
+        });
+        // Close dropdown when clicking outside
+        document.addEventListener("click", function () {
+          timeFilterDropdown.classList.add("hidden");
+        });
+        // Handle filter selection
+        filterOptions.forEach((option) => {
+          option.addEventListener("click", function () {
+            const value = this.dataset.value;
+            selectedTimeFilter.textContent = this.textContent;
+            timeFilterDropdown.classList.add("hidden");
+            // Filter videos based on selection
+            filterVideosByTime(value);
+            showToast(`Showing videos from ${this.textContent.toLowerCase()}`);
+          });
+        });
+        function filterVideosByTime(timeFrame) {
+          const today = new Date();
+          const videoCards = document.querySelectorAll(
+            ".new-videos-section .video-card",
+          );
+          videoCards.forEach((card) => {
+            const dateText = card.querySelector(
+              ".text-gray-500 span:last-child",
+            ).textContent;
+            const videoDate = new Date(dateText);
+            let show = false;
+            switch (timeFrame) {
+              case "today":
+                show = videoDate.toDateString() === today.toDateString();
+                break;
+              case "week":
+                const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                show = videoDate >= weekAgo;
+                break;
+              case "month":
+                const monthAgo = new Date(
+                  today.getFullYear(),
+                  today.getMonth() - 1,
+                  today.getDate(),
+                );
+                show = videoDate >= monthAgo;
+                break;
+            }
+            card.style.display = show ? "block" : "none";
+          });
+        }
+        // Initial filter
+        filterVideosByTime("today");
+      });
+    </script>
     <script type="module" src="user.js"></script>
+    <script type="module" src="feeds.js"></script>
+    <script type="module" src="main.js"></script>
   </body>
 </html>

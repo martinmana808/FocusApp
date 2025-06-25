@@ -35,10 +35,10 @@ export function getUserIdFromAuthHeader(headers) {
       algorithms: ['RS256']
     }, (err, decoded) => {
       if (err) {
-        console.error('[Auth Backend] Token verification failed:', err.message);
+        console.error('[Auth Backend] Token verification failed:', err);
         return resolve(null);
       }
-      console.log('[Auth Backend] Token verified successfully. Decoded:', decoded.sub);
+      console.log('[Auth Backend] Token verified successfully. Decoded:', decoded);
       resolve(decoded && decoded.sub);
     });
   });

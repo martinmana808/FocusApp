@@ -4,6 +4,25 @@ import Parser from 'rss-parser';
 
 const parser = new Parser();
 
+async function getChannelIdFromHandle(handle) {
+  // Remove leading @ if present
+  const cleanHandle = handle.startsWith('@') ? handle.slice(1) : handle;
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) throw new Error('YouTube API key not configured');
+  // Use the search endpoint to find the channel by handle or custom name
+  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(cleanHandle)}&key=${apiKey}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch channel info from YouTube API');
+  const data = await res.json();
+  if (!data.items || !data.items.length) throw new Error('No channel found for this handle');
+  // Find the channel whose customUrl or title matches the handle (best effort)
+  const match = data.items.find(item =>
+    item.snippet.channelTitle.replace(/\s+/g, '').toLowerCase() === cleanHandle.toLowerCase() ||
+    (item.snippet.customUrl && item.snippet.customUrl.toLowerCase() === cleanHandle.toLowerCase())
+  ) || data.items[0];
+  return match.snippet.channelId || match.id.channelId;
+}
+
 export async function handler(event) {
   // 1. Proteger la ruta: solo POST y usuario autenticado
   if (event.httpMethod !== 'POST') {
@@ -24,14 +43,36 @@ export async function handler(event) {
     let final_feed_url = feed_url;
 
     // --- YouTube URL Conversion ---
-    // Si es una URL de canal de YouTube, la convertimos a una URL de feed RSS.
     if (feed_url.includes('youtube.com/channel/')) {
       const channelId = feed_url.split('/channel/')[1].split('/')[0];
       final_feed_url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
     } else if (feed_url.includes('youtube.com/@')) {
-      // Por ahora, las URLs con @handle no se pueden convertir directamente sin la API de YouTube.
-      // Devolvemos un error claro al usuario.
-      return { statusCode: 400, body: 'YouTube @handle URLs are not supported yet. Please find the channel URL with the ID (e.g., /channel/UC...).' };
+      // Extract handle from URL
+      const handle = feed_url.split('youtube.com/@')[1].split(/[/?#]/)[0];
+      try {
+        const channelId = await getChannelIdFromHandle(handle);
+        final_feed_url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+      } catch (err) {
+        return { statusCode: 400, body: 'Could not resolve YouTube handle: ' + err.message };
+      }
+    } else if (feed_url.match(/youtube.com\/(user|c)\//)) {
+      // /user/ or /c/ custom URLs
+      const customName = feed_url.split(/youtube.com\/(user|c)\//)[1].split(/[/?#]/)[0];
+      try {
+        const channelId = await getChannelIdFromHandle(customName);
+        final_feed_url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+      } catch (err) {
+        return { statusCode: 400, body: 'Could not resolve YouTube custom URL: ' + err.message };
+      }
+    } else if (feed_url.match(/youtube.com\/[A-Za-z0-9_-]+$/)) {
+      // Root custom URLs like /TodoNoticias
+      const customName = feed_url.split('youtube.com/')[1].split(/[/?#]/)[0];
+      try {
+        const channelId = await getChannelIdFromHandle(customName);
+        final_feed_url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+      } catch (err) {
+        return { statusCode: 400, body: 'Could not resolve YouTube custom URL: ' + err.message };
+      }
     }
     
     // (Opcional pero recomendado) Validar que la URL es un feed real

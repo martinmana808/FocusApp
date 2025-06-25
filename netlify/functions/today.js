@@ -7,15 +7,34 @@ export async function handler(event) {
     return { statusCode: 401, body: 'Unauthorized' };
   }
 
-  // últimos 7 días (7 * 24 h)
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  // Parse range from query string
+  const url = new URL(event.rawUrl || `http://localhost${event.path}${event.rawQuery ? '?' + event.rawQuery : ''}`);
+  const range = url.searchParams.get('range') || 'week';
 
-  const { data, error } = await supabase
+  let since;
+  const now = new Date();
+  if (range === 'today') {
+    // Start of today
+    since = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  } else if (range === 'month') {
+    since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  } else { // 'week' or default
+    since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  }
+
+  let query = supabase
     .from('videos')
     .select('id,title,source,published_at,watched,saved_for_later')
     .eq('user_id', user_id)
-    .gte('published_at', sevenDaysAgo)          // últimos 7 días
     .order('published_at', { ascending: false });
+
+  if (range === 'today') {
+    query = query.gte('published_at', since);
+  } else {
+    query = query.gte('published_at', since);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error(error);

@@ -1,8 +1,19 @@
+console.log('[App] main.js loaded');
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('[App] DOMContentLoaded fired, instantiating App...');
+  try {
+    new App();
+    console.log('[App] App instantiated successfully!');
+  } catch (e) {
+    console.error('[App] Error instantiating App:', e);
+  }
+});
 /* ─── MAIN APPLICATION ─────────────────────────────────────── */
 import { CONFIG } from './config.js';
 import { authManager } from './auth.js';
 import VideoPlayer from './player.js';
 import VideoList from './videoList.js';
+import { renderFeedList } from './feeds.js';
 
 class App {
   constructor() {
@@ -10,6 +21,7 @@ class App {
     this.videoList = null;
     this.uiElements = {};
     
+    console.log('[App] Instantiating App...');
     this.init();
   }
 
@@ -75,10 +87,29 @@ class App {
       this.uiElements.feedUrlInput.value = '';
       window.showToast('Feed added! Syncing...');
       this.loadUserFeeds();
-      await this.handleSyncFeeds();
+      // --- Automatically sync videos after adding a feed ---
+      await this.syncFeedsAndRefreshVideos();
     } catch (error) {
       console.error('Failed to add feed:', error);
       window.showToast(error.message);
+    }
+  }
+
+  // Add this helper method to sync feeds and refresh videos
+  async syncFeedsAndRefreshVideos() {
+    try {
+      const token = await authManager.auth0.getTokenSilently();
+      window.showToast('Syncing your feeds...');
+      const res = await fetch('/.netlify/functions/fetchFeeds', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Sync failed');
+      window.showToast('Sync complete! Refreshing list...');
+      await this.videoList.loadToday();
+    } catch (error) {
+      console.error('Failed to sync feeds:', error);
+      window.showToast(`Sync Error: ${error.message}`);
     }
   }
 
@@ -86,6 +117,8 @@ class App {
     window.showToast('Syncing your feeds...');
     try {
       const token = await authManager.auth0.getTokenSilently();
+      const isAuthenticated = await authManager.isAuthenticated();
+      console.log('[App] handleSyncFeeds: token:', token ? token.substring(0, 20) + '...' : 'null', 'isAuthenticated:', isAuthenticated);
       const res = await fetch('/.netlify/functions/fetchFeeds', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -197,6 +230,14 @@ class App {
       // Attach logout event
       document.getElementById('btn-logout').onclick = () => authManager.logout();
       this.loadUserFeeds();
+      // --- Ensure feed list is rendered after auth ---
+      try {
+        console.log('[App] Calling renderFeedList after auth...');
+        await renderFeedList();
+        console.log('[App] renderFeedList finished.');
+      } catch (err) {
+        console.error('[App] Error calling renderFeedList:', err);
+      }
     } else {
       this.uiElements.avatar.innerHTML = `<div class="w-16 h-16 rounded-full bg-gray-400 flex items-center justify-center text-2xl text-white">?</div>`;
       this.uiElements.userInfo.innerHTML = `<button id="btn-login" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded">Log in</button>`;
@@ -205,20 +246,18 @@ class App {
 
     // Load videos (show read-only list even without login)
     console.log('[App] Loading video list...');
-    await this.videoList.loadToday();
-    console.log('[App] Video list loaded.');
+    try {
+      await this.videoList.loadToday();
+      console.log('[App] Video list loaded.');
+    } catch (err) {
+      console.error('[App] Error loading video list:', err);
+    }
   }
 }
 
-// --- App Initialization ---
-function startApp() {
-  console.log('[App] Starting application...');
+// Ensure App is instantiated on DOMContentLoaded
+console.log('[App] Adding DOMContentLoaded listener for App instantiation...');
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('[App] DOMContentLoaded fired, instantiating App...');
   new App();
-}
-
-// This ensures the app starts correctly whether the script is fast or slow.
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', startApp);
-} else {
-  startApp();
-} 
+});

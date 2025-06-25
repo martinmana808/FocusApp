@@ -5,9 +5,10 @@ import { authManager } from './auth.js'; // Import authManager to get tokens
 
 class VideoList {
   constructor() {
-    this.containerNew = document.getElementById('new');
-    this.containerSaved = document.getElementById('saved');
+    this.containerNew = document.getElementById('new') || document.querySelector('.new-videos-section .grid');
+    this.containerSaved = document.getElementById('saved') || document.querySelector('.saved-videos-section .grid');
     this.videos = [];
+    this.currentRange = 'week'; // Default
     this.init();
   }
 
@@ -17,33 +18,62 @@ class VideoList {
     // Make resetWatched available globally
     window.resetWatched = () => this.resetWatched();
     window.toggleSavedForLater = (id) => this.toggleSavedForLater(id);
+
+    // Add event listener for time filter button (custom dropdown)
+    const timeFilterBtn = document.getElementById('timeFilterBtn');
+    const timeFilterDropdown = document.getElementById('timeFilterDropdown');
+    const selectedTimeFilter = document.getElementById('selectedTimeFilter');
+    if (timeFilterBtn && timeFilterDropdown && selectedTimeFilter) {
+      timeFilterBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        timeFilterDropdown.classList.toggle('hidden');
+      });
+      timeFilterDropdown.querySelectorAll('button[data-value]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const value = btn.getAttribute('data-value');
+          this.currentRange = value;
+          selectedTimeFilter.textContent = btn.textContent;
+          timeFilterDropdown.classList.add('hidden');
+          console.log('[TimeFilter] Selected:', value);
+          this.loadByRange(value);
+        });
+      });
+      // Close dropdown on click outside
+      document.addEventListener('click', (e) => {
+        if (!timeFilterBtn.contains(e.target) && !timeFilterDropdown.contains(e.target)) {
+          timeFilterDropdown.classList.add('hidden');
+        }
+      });
+    }
   }
 
   /**
-   * Loads and displays today's videos
+   * Loads and displays videos for the selected range
    */
-  async loadToday() {
+  async loadByRange(range = 'week') {
     try {
       const headers = {};
       const token = await authManager.auth0.getTokenSilently();
       headers['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch(`${CONFIG.API.BASE_URL}${CONFIG.API.ENDPOINTS.TODAY}`, { headers });
-      
+      const url = `${CONFIG.API.BASE_URL}${CONFIG.API.ENDPOINTS.TODAY}?range=${range}`;
+      const res = await fetch(url, { headers });
       if (!res.ok) {
-        // If the server returns an error, don't try to parse JSON
         throw new Error(`Failed to load videos: ${res.status} ${res.statusText}`);
       }
-      
       const list = await res.json();
       this.videos = list;
       this.render(list);
     } catch (error) {
       console.error('Error loading videos:', error);
-      this.containerNew.innerHTML = `<li class="text-red-500">Could not load videos. Are you logged in?</li>`;
-      this.containerSaved.innerHTML = '';
+      if (this.containerNew) this.containerNew.innerHTML = `<li class="text-red-500">Could not load videos. Are you logged in?</li>`;
+      if (this.containerSaved) this.containerSaved.innerHTML = '';
       this.updateBadges(0, 0);
     }
+  }
+
+  // Update loadToday to use the current range
+  async loadToday() {
+    return this.loadByRange(this.currentRange);
   }
 
   /**
