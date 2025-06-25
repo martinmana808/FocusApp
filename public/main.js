@@ -1,13 +1,5 @@
 console.log('[App] main.js loaded');
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('[App] DOMContentLoaded fired, instantiating App...');
-  try {
-    new App();
-    console.log('[App] App instantiated successfully!');
-  } catch (e) {
-    console.error('[App] Error instantiating App:', e);
-  }
-});
+
 /* ─── MAIN APPLICATION ─────────────────────────────────────── */
 import { CONFIG } from './config.js';
 import { authManager } from './auth.js';
@@ -18,6 +10,7 @@ import { showSpinner, hideSpinner } from './utils.js';
 
 class App {
   constructor() {
+    console.log('[App] constructor');
     this.player = null;
     this.videoList = null;
     this.uiElements = {};
@@ -27,6 +20,7 @@ class App {
   }
 
   async init() {
+    console.log('[App] init');
     console.log('[App] Initializing...');
     // Initialize UI element references
     this.setupUIElements();
@@ -208,6 +202,7 @@ class App {
    * Starts the application
    */
   async start() {
+    console.log('[App] start');
     await this.refreshUI();
   }
 
@@ -227,6 +222,7 @@ class App {
     // Render user info/avatar
     if (isAuthenticated) {
       const user = await authManager.getUser();
+      console.log('[App] ESTO FUNCIONA');
       // Avatar
       if (user.picture) {
         this.uiElements.avatar.innerHTML = `<img src="${user.picture}" alt="avatar" class="w-16 h-16 rounded-full object-cover">`;
@@ -241,38 +237,19 @@ class App {
       // Attach logout event
       document.getElementById('btn-logout').onclick = () => authManager.logout();
       // --- Ensure feed list is rendered after auth ---
+      
       try {
-        // --- Sync all feeds once per session ---
         await syncAllFeedsOncePerSession();
       } catch (err) {
         console.error('[App] Error during feed sync:', err);
       }
-
-      
-
-      // TEST: Force getFeeds after authentication
       try {
-        const token = await authManager.auth0.getTokenSilently();
-        const res = await fetch('/.netlify/functions/getFeeds', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const feeds = await res.json();
-        console.log('[TEST] Forced getFeeds result:', feeds);
-        // Optionally, show in UI:
-        // window.showToast('Fetched feeds: ' + JSON.stringify(feeds));
-      } catch (err) {
-        console.error('[TEST] Error forcing getFeeds:', err);
-      }
-          
-      // --- Always render feeds after sync attempt ---
-      try {
+        await this.loadUserFeeds();
         await renderFeedList();
         console.log('[App] renderFeedList finished.');
       } catch (err) {
         console.error('[App] Error calling renderFeedList:', err);
       }
-      // Optionally update sidebar feed list if needed
-      // await this.loadUserFeeds();
     } else {
       this.uiElements.avatar.innerHTML = `<div class="w-16 h-16 rounded-full bg-gray-400 flex items-center justify-center text-2xl text-white">?</div>`;
       this.uiElements.userInfo.innerHTML = `<button id="btn-login" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded">Log in</button>`;
@@ -290,8 +267,6 @@ class App {
   }
 }
 
-// Ensure App is instantiated on DOMContentLoaded
-console.log('[App] Adding DOMContentLoaded listener for App instantiation...');
 document.addEventListener('DOMContentLoaded', () => {
   console.log('[App] DOMContentLoaded fired, instantiating App...');
   new App();
